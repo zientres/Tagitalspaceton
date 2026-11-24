@@ -1,0 +1,487 @@
+"use strict";
+
+/* Номерные знаки */
+
+const plates = [
+  {
+    prefix: "",
+    number: "А777АА",
+    region: "77",
+    regionCountry: "RUS",
+    className: "plate--ru"
+  },
+  {
+    prefix: "KZ",
+    number: "777ААА",
+    region: "07",
+    regionCountry: "",
+    className: "plate--kz"
+  }
+];
+
+const DISPLAY_TIME = 3000;
+const FADE_TIME = 300;
+
+const elements = {
+  plate: document.getElementById("license-plate"),
+  prefix: document.getElementById("plate-prefix"),
+  number: document.getElementById("plate-main"),
+  region: document.getElementById("plate-region"),
+  regionCountry: document.getElementById("plate-region-country"),
+  progressBar: document.getElementById("plate-progress-bar")
+};
+
+const missingElements = Object.entries(elements)
+  .filter(([, element]) => !element)
+  .map(([name]) => name);
+
+if (missingElements.length > 0) {
+  console.error(
+    "TagitalSpace: не найдены элементы HTML:",
+    missingElements.join(", ")
+  );
+} else {
+  let currentPlateIndex = 0;
+  let changeTimer = null;
+  let isChanging = false;
+
+  function renderPlate(item) {
+    elements.prefix.textContent = item.prefix;
+    elements.prefix.hidden = item.prefix === "";
+
+    elements.number.textContent = item.number;
+    elements.region.textContent = item.region;
+    elements.regionCountry.textContent = item.regionCountry;
+
+    elements.regionCountry.style.display =
+      item.regionCountry ? "flex" : "none";
+
+    elements.plate.classList.remove("plate--ru", "plate--kz");
+    elements.plate.classList.add(item.className);
+
+    elements.plate.setAttribute(
+      "aria-label",
+      item.regionCountry
+        ? `${item.number}, регион ${item.region}, ${item.regionCountry}`
+        : `${item.prefix} ${item.number}, регион ${item.region}`
+    );
+
+    elements.number.style.opacity = "1";
+    elements.region.style.opacity = "1";
+  }
+
+  function startProgress() {
+    elements.progressBar.classList.remove("play");
+    void elements.progressBar.offsetWidth;
+    elements.progressBar.classList.add("play");
+  }
+
+  function scheduleNextPlate() {
+    clearTimeout(changeTimer);
+
+    changeTimer = setTimeout(
+      nextPlate,
+      DISPLAY_TIME - FADE_TIME
+    );
+  }
+
+  function nextPlate() {
+    if (isChanging) return;
+
+    isChanging = true;
+
+    elements.number.style.opacity = "0";
+    elements.region.style.opacity = "0";
+
+    changeTimer = setTimeout(() => {
+      currentPlateIndex =
+        (currentPlateIndex + 1) % plates.length;
+
+      renderPlate(plates[currentPlateIndex]);
+      startProgress();
+
+      isChanging = false;
+      scheduleNextPlate();
+    }, FADE_TIME);
+  }
+
+  renderPlate(plates[currentPlateIndex]);
+  startProgress();
+  scheduleNextPlate();
+}
+
+/* Настройки и смена языка */
+
+(() => {
+  const translations = {
+    ru: {
+      pageTitle: "TagitalSpace",
+      collectionPageTitle: "TagitalSpace — Коллекции", communityPageTitle: "TagitalSpace — Сообщество", auctionsPageTitle: "TagitalSpace — Аукционы",
+      navCollection: "Коллекции",
+      navAuctions: "Аукционы",
+      navMarket: "Рынок",
+      navCommunity: "Сообщество",
+      connectWallet: "Подключить кошелёк",
+      disconnectWalletTitle: "Вы точно хотите отвязать кошелёк?",
+      disconnectWalletConfirm: "Да",
+      disconnectWalletCancel: "Нет",
+      settingsTitle: "Настройки",
+      languageLabel: "Язык сайта",
+      heroTitle: "TagitalSpace — цифровое пространство коллекций номерных знаков со всего мира",
+      collectionEyebrow: "КОЛЛЕКЦИИ",
+      collectionIntro: "Каждая страна представлена отдельной коллекцией со своим форматом номерных знаков",
+      collectionBrowse: "Смотреть коллекции",
+      auctionsEyebrow: "АУКЦИОНЫ",
+      auctionsTitle: "Выберите номер и запустите аукцион",
+      auctionsIntro: "Пользователь вводит желаемое сочетание символов. Система проверяет, свободен ли номер в реестре TagitalSpace. Любой пользователь может запустить аукцион со своего кошелька: стартовая ставка зависит от комбинации номера, следующая ставка должна быть минимум на 5% выше предыдущей, а длительность аукциона — 1 час.",
+      auctionsDetail: "После запуска аукциона любой пользователь может предложить более высокую ставку. Победитель получает NFT с выбранным номерным знаком.",
+      refreshAuctions: "Обновить",
+      loadingAuctions: "Загружаю аукционы…",
+      noActiveAuctions: "Сейчас нет активных аукционов.",
+      auctionLoadError: "Не удалось загрузить аукционы.",
+      auctionStartingBid: "Начальная ставка",
+      auctionHighestBid: "Текущая ставка",
+      auctionNextBid: "Минимальная следующая ставка",
+      auctionEnds: "Окончание",
+      auctionBidPlaceholder: "Сумма в TON",
+      auctionBidButton: "Сделать ставку",
+      auctionFinishButton: "Завершить аукцион",
+      auctionStatusActive: "Торги идут",
+      auctionStatusMint: "Подтверждается выпуск NFT",
+      auctionStatusSkip: "Завершается без ставок",
+      auctionBidSent: "Запрос ставки отправлен в кошелёк.",
+      auctionFinishSent: "Запрос завершения отправлен в кошелёк.",
+      auctionBidError: "Не удалось отправить ставку.",
+      auctionFinishError: "Не удалось завершить аукцион.",
+      auctionVisualCaption: "Победитель получает номерной знак после завершения торгов",
+      marketEyebrow: "РЫНОК",
+      marketTitle: "Вторичный рынок на Getgems",
+      marketIntro: "Выпущенные NFT можно будет покупать и продавать на Getgems — внешнем маркетплейсе TON. Ссылки на Getgems можно найти в каждой коллекции.",
+      marketVisualCaption: "Покупайте и продавайте номерные знаки",
+      communityEyebrow: "СООБЩЕСТВО",
+      communityTitle: "Следите за развитием TagitalSpace",
+      communityIntro: "В Telegram-канале будут выходить новости о ходе проекта, важных обновлениях и новых коллекциях.",
+      communityJoin: "Telegram-канал",
+      openSettings: "Открыть настройки",
+      closeSettings: "Закрыть настройки",
+      homeAria: "TagitalSpace — главная",
+      logoAlt: "Логотип TagitalSpace",
+      plateAria: "Номерной знак",
+      progressAria: "Смена номерного знака", countryRussia: "Россия", openRussiaCollection: "Открыть коллекцию России", backToCollections: "Вернуться к коллекциям", collectionSections: "Разделы коллекции", tabMint: "Минт", tabAuctions: "Аукционы", tabMarket: "Рынок", registerRussiaPlate: "Зарегистрировать номерной знак России", registrationSubtitle: "Вводите комбинацию вашего номера в поле снизу", plateInputLabel: "Введите номер в формате А777АА 777", viewRegions: "Посмотреть регионы России", invalidLettersHint: "Используйте русские буквы: А В Е К М Н О Р С Т У Х", search: "Поиск", regionCodesDialog: "Коды регионов России", close: "Закрыть", regionCodesImageAlt: "Таблица разрешённых автомобильных кодов регионов России", invalidRegion: "Такого кода региона нет в списке"
+    },
+
+    en: {
+      pageTitle: "TagitalSpace",
+      collectionPageTitle: "TagitalSpace — Collections", communityPageTitle: "TagitalSpace — Community", auctionsPageTitle: "TagitalSpace — Auctions",
+      navCollection: "Collections",
+      navAuctions: "Auctions",
+      navMarket: "Market",
+      navCommunity: "Community",
+      connectWallet: "Connect wallet",
+      disconnectWalletTitle: "Are you sure you want to disconnect your wallet?",
+      disconnectWalletConfirm: "Yes",
+      disconnectWalletCancel: "No",
+      settingsTitle: "Settings",
+      languageLabel: "Website language",
+      heroTitle: "TagitalSpace — a digital space for license plate collections from around the world",
+      collectionEyebrow: "COLLECTIONS",
+      collectionIntro: "Each country is represented by a separate collection with its own license plate format",
+      collectionBrowse: "View collections",
+      auctionsEyebrow: "AUCTIONS",
+      auctionsTitle: "Choose a plate and start an auction",
+      auctionsIntro: "The user enters a desired plate combination. The registry checks whether it is available. Anyone can start an auction from their wallet: the starting bid depends on the plate combination, each new bid must be at least 5% higher than the previous bid, and the auction lasts 1 hour.",
+      auctionsDetail: "After an auction starts, anyone can place a higher bid. The winner receives an NFT of the selected license plate.",
+      refreshAuctions: "Refresh",
+      loadingAuctions: "Loading auctions…",
+      noActiveAuctions: "There are no active auctions right now.",
+      auctionLoadError: "Could not load auctions.",
+      auctionStartingBid: "Starting bid",
+      auctionHighestBid: "Current bid",
+      auctionNextBid: "Minimum next bid",
+      auctionEnds: "Ends",
+      auctionBidPlaceholder: "Amount in TON",
+      auctionBidButton: "Place bid",
+      auctionFinishButton: "Finish auction",
+      auctionStatusActive: "Bidding is open",
+      auctionStatusMint: "NFT mint confirmation pending",
+      auctionStatusSkip: "Closing without bids",
+      auctionBidSent: "Bid request sent to your wallet.",
+      auctionFinishSent: "Finish request sent to your wallet.",
+      auctionBidError: "Could not submit the bid.",
+      auctionFinishError: "Could not finish the auction.",
+      auctionVisualCaption: "The winner receives the license plate NFT when the auction ends",
+      marketEyebrow: "MARKET",
+      marketTitle: "The secondary market on Getgems",
+      marketIntro: "Issued NFTs will be available to buy and sell on Getgems — an external TON marketplace. You can find Getgems links in each collection.",
+      marketVisualCaption: "Buy and sell license plates",
+      communityEyebrow: "COMMUNITY",
+      communityTitle: "Follow the progress of TagitalSpace",
+      communityIntro: "The Telegram channel will feature project updates, important announcements, and news about new collections.",
+      communityJoin: "Telegram channel",
+      openSettings: "Open settings",
+      closeSettings: "Close settings",
+      homeAria: "TagitalSpace — Home",
+      logoAlt: "TagitalSpace logo",
+      plateAria: "License plate",
+      progressAria: "License plate rotation", countryRussia: "Russia", openRussiaCollection: "Open the Russia collection", backToCollections: "Back to collections", collectionSections: "Collection sections", tabMint: "Mint", tabAuctions: "Auctions", tabMarket: "Market", registerRussiaPlate: "Register a Russian license plate", registrationSubtitle: "Enter your plate combination in the field below", plateInputLabel: "Enter a plate in the format A777AA 777", viewRegions: "View Russian region codes", invalidLettersHint: "Use Russian letters: А В Е К М Н О Р С Т У Х", search: "Search", regionCodesDialog: "Russian region codes", close: "Close", regionCodesImageAlt: "Table of permitted Russian vehicle registration region codes", invalidRegion: "This region code is not in the list"
+    }
+  };
+
+  const walletButton = document.getElementById("connect-wallet");
+  let connectedWalletAddress = null;
+
+  const drawer = document.getElementById("settings-drawer");
+  const overlay = document.getElementById("settings-overlay");
+  const openButton = document.getElementById("settings-open");
+  const closeButton = document.getElementById("settings-close");
+  const languageButtons = document.querySelectorAll("[data-language]");
+
+  if (!drawer || !overlay || !openButton || !closeButton) {
+    console.error("TagitalSpace: не найдены элементы меню настроек.");
+    return;
+  }
+
+  function openSettings() {
+    drawer.inert = false;
+    drawer.setAttribute("aria-hidden", "false");
+    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.add("is-open");
+    drawer.classList.add("is-open");
+    document.body.classList.add("settings-open");
+    openButton.setAttribute("aria-expanded", "true");
+
+    closeButton.focus({ preventScroll: true });
+  }
+
+  function closeSettings() {
+    drawer.classList.remove("is-open");
+    overlay.classList.remove("is-open");
+    document.body.classList.remove("settings-open");
+    drawer.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("aria-hidden", "true");
+    drawer.inert = true;
+    openButton.setAttribute("aria-expanded", "false");
+
+    openButton.focus({ preventScroll: true });
+  }
+
+  function setLanguage(language) {
+    const dictionary = translations[language];
+    if (!dictionary) return;
+
+    try {
+      localStorage.setItem("tagitalspace-language", language);
+    } catch (error) {
+      console.warn("TagitalSpace: не удалось сохранить язык.", error);
+    }
+
+    document.documentElement.lang = language;
+    const titleKey = document.querySelector("title")?.dataset.i18n;
+    document.title = titleKey && dictionary[titleKey] ? dictionary[titleKey] : dictionary.pageTitle;
+
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+      const key = element.dataset.i18n;
+      if (dictionary[key] !== undefined) element.textContent = dictionary[key];
+    });
+    ["aria-label", "alt", "placeholder", "title"].forEach((attribute) => {
+      const dataAttribute = `data-i18n-${attribute}`;
+      document.querySelectorAll(`[${dataAttribute}]`).forEach((element) => {
+        const key = element.getAttribute(dataAttribute);
+        if (dictionary[key] !== undefined) element.setAttribute(attribute, dictionary[key]);
+      });
+    });
+    const registrationHint = document.getElementById("registration-hint");
+    if (registrationHint && dictionary.invalidLettersHint) registrationHint.textContent = dictionary.invalidLettersHint;
+    const invalidRegionCell = document.querySelector(".registration-region-cell.is-invalid");
+    if (invalidRegionCell && dictionary.invalidRegion) invalidRegionCell.setAttribute("title", dictionary.invalidRegion);
+
+    document.querySelector(".brand")?.setAttribute(
+      "aria-label",
+      dictionary.homeAria
+    );
+
+    document.querySelector(".brand-logo")?.setAttribute(
+      "alt",
+      dictionary.logoAlt
+    );
+
+    openButton.setAttribute("aria-label", dictionary.openSettings);
+    closeButton.setAttribute("aria-label", dictionary.closeSettings);
+    drawer.setAttribute("aria-label", dictionary.settingsTitle);
+
+    document.getElementById("license-plate")?.setAttribute(
+      "aria-label",
+      dictionary.plateAria
+    );
+
+    document.querySelector(".plate-progress")?.setAttribute(
+      "aria-label",
+      dictionary.progressAria
+    );
+
+    languageButtons.forEach((button) => {
+      const active = button.dataset.language === language;
+
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+
+    if (walletButton) {
+      walletButton.textContent = connectedWalletAddress || dictionary.connectWallet;
+    }
+
+    if (window.tagitalSpaceTonConnect) {
+      window.tagitalSpaceTonConnect.uiOptions = {
+        language,
+        uiPreferences: { theme: "DARK" }
+      };
+    }
+  }
+
+  openButton.addEventListener("click", openSettings);
+  closeButton.addEventListener("click", closeSettings);
+  overlay.addEventListener("click", closeSettings);
+
+  languageButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setLanguage(button.dataset.language);
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      drawer.classList.contains("is-open")
+    ) {
+      closeSettings();
+    }
+  });
+
+  let savedLanguage = "ru";
+  try {
+    const storedLanguage = localStorage.getItem("tagitalspace-language");
+    if (storedLanguage === "ru" || storedLanguage === "en") {
+      savedLanguage = storedLanguage;
+    }
+  } catch (error) {
+    console.warn("TagitalSpace: не удалось прочитать сохранённый язык.", error);
+  }
+
+  setLanguage(savedLanguage);
+
+  /* TON Connect — только тестовая сеть TON Testnet */
+  if (walletButton && window.TON_CONNECT_UI?.TonConnectUI) {
+    try {
+      const manifestUrl = new URL("tonconnect-manifest.json", document.baseURI).href;
+      const tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({ manifestUrl });
+
+      // Сеть фиксируется до открытия окна выбора кошелька.
+      tonConnectUI.setConnectionNetwork("-3");
+      tonConnectUI.uiOptions = {
+        language: document.documentElement.lang || "ru",
+        uiPreferences: { theme: "DARK" }
+      };
+
+      const disconnectDialog = document.createElement("div");
+      disconnectDialog.className = "wallet-disconnect-modal";
+      disconnectDialog.hidden = true;
+      disconnectDialog.innerHTML = '<div class="wallet-disconnect-backdrop"></div><section class="wallet-disconnect-dialog" role="dialog" aria-modal="true" aria-labelledby="wallet-disconnect-title"><p class="wallet-disconnect-title" id="wallet-disconnect-title"></p><div class="wallet-disconnect-actions"><button class="wallet-disconnect-confirm" type="button"></button><button class="wallet-disconnect-cancel" type="button"></button></div></section>';
+      document.body.appendChild(disconnectDialog);
+
+      const disconnectTitle = disconnectDialog.querySelector(".wallet-disconnect-title");
+      const disconnectConfirm = disconnectDialog.querySelector(".wallet-disconnect-confirm");
+      const disconnectCancel = disconnectDialog.querySelector(".wallet-disconnect-cancel");
+      let previousWalletFocus = null;
+
+      function closeDisconnectDialog() {
+        disconnectDialog.hidden = true;
+        if (previousWalletFocus) previousWalletFocus.focus({ preventScroll: true });
+      }
+
+      function updateDisconnectDialogLanguage() {
+        const dictionary = translations[document.documentElement.lang] || translations.ru;
+        disconnectTitle.textContent = dictionary.disconnectWalletTitle;
+        disconnectConfirm.textContent = dictionary.disconnectWalletConfirm;
+        disconnectCancel.textContent = dictionary.disconnectWalletCancel;
+      }
+
+      function openDisconnectDialog() {
+        previousWalletFocus = document.activeElement;
+        updateDisconnectDialogLanguage();
+        disconnectDialog.hidden = false;
+        disconnectCancel.focus({ preventScroll: true });
+      }
+
+      walletButton.addEventListener("click", () => {
+        if (connectedWalletAddress) {
+          openDisconnectDialog();
+        } else {
+          tonConnectUI.openModal();
+        }
+      });
+
+      disconnectCancel.addEventListener("click", closeDisconnectDialog);
+      disconnectDialog.querySelector(".wallet-disconnect-backdrop").addEventListener("click", closeDisconnectDialog);
+      disconnectConfirm.addEventListener("click", async () => {
+        disconnectConfirm.disabled = true;
+        try {
+          await tonConnectUI.disconnect();
+          closeDisconnectDialog();
+        } catch (error) {
+          console.error("TagitalSpace: не удалось отключить кошелёк.", error);
+        } finally {
+          disconnectConfirm.disabled = false;
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !disconnectDialog.hidden) closeDisconnectDialog();
+      });
+
+      tonConnectUI.onStatusChange((wallet) => {
+        if (!wallet) {
+          connectedWalletAddress = null;
+          walletButton.removeAttribute("title");
+        } else if (wallet.account.chain !== "-3") {
+          console.error("TagitalSpace: подключён не TON Testnet. Соединение будет закрыто.");
+          tonConnectUI.disconnect();
+          return;
+        } else {
+          const address = wallet.account.address;
+          const [workchainText, hashHex] = address.split(":");
+          if (/^-?[0-9]+$/.test(workchainText) && /^[0-9a-fA-F]{64}$/.test(hashHex || "")) {
+            const bytes = new Uint8Array(36);
+            bytes[0] = 0x51 | 0x80;
+            bytes[1] = Number(workchainText) & 0xff;
+            for (let i = 0; i < 32; i++) bytes[i + 2] = parseInt(hashHex.slice(i * 2, i * 2 + 2), 16);
+            let crc = 0;
+            for (let i = 0; i < 34; i++) {
+              crc ^= bytes[i] << 8;
+              for (let bit = 0; bit < 8; bit++) crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+              crc &= 0xffff;
+            }
+            bytes[34] = crc >> 8;
+            bytes[35] = crc & 0xff;
+            let binary = "";
+            bytes.forEach(byte => binary += String.fromCharCode(byte));
+            connectedWalletAddress = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+          } else {
+            connectedWalletAddress = address;
+          }
+          walletButton.title = connectedWalletAddress;
+        }
+
+        const language = document.documentElement.lang || "ru";
+        walletButton.textContent =
+          connectedWalletAddress
+            ? connectedWalletAddress.slice(0, 6) + "..." + connectedWalletAddress.slice(-4)
+            : translations[language]?.connectWallet || translations.ru.connectWallet;
+      });
+
+      window.tagitalSpaceTonConnect = tonConnectUI;
+    } catch (error) {
+      console.error("TagitalSpace: не удалось запустить TON Connect для Testnet.", error);
+    }
+  } else if (walletButton) {
+    console.error("TagitalSpace: библиотека TON Connect UI не загрузилась.");
+  }
+})();
